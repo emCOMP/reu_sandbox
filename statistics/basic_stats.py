@@ -22,6 +22,20 @@ def get_count(code_level, code_name):
 
     return db.find(query).count()
 
+
+
+def get_overlap_count(first_code, second_code):
+
+    # Error Handling
+    if type(first_code) == type(second_code) != str:
+        raise TypeError('Invalid code_level or code_name type: ' +str(type(first_code))+' and '+str(type(second_code)))
+
+    query = {'$and':[{'codes.first_code':first_code}, {'codes.second_code':second_code}]}
+
+    return db.find(query).count()
+
+
+
 total = db.count()
 
 first_level = ['Affirm', 'Deny', 'Neutral', 'Unrelated', 'Uncodable']
@@ -45,3 +59,26 @@ with open(event_in+'_'+rumor_in+'_statistics.csv', 'wb') as f:
 
     totals_row = ['Total Tweets:', total]
     f_writer.writerow(totals_row)
+
+    ##################################################
+    f_writer.writerow([])
+    f_writer.writerow(['Cross-Tabulation'])
+
+    lines = [[first_code]+[get_overlap_count(first_code, code) for code in second_level] for first_code in first_level]
+
+
+    '''
+    Equivalent to:
+
+    results = {}
+    for first in first_level:
+            results[first] = []
+        for second in second_level:
+            results[first].append(get_overlap_count(first, second))
+    '''
+
+    header = [''] + second_level
+    f_writer.writerow(header)
+
+    for line in lines:
+        f_writer.writerow(line)
