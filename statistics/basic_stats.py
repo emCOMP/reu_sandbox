@@ -22,19 +22,20 @@ def get_count(code_level, code_name):
 
     return db.find(query).count()
 
-
-
 def get_overlap_count(first_code, second_code):
-
-    # Error Handling
     if type(first_code) == type(second_code) != str:
         raise TypeError('Invalid code_level or code_name type: ' +str(type(first_code))+' and '+str(type(second_code)))
+    query = {'$and':[{'codes.first_code':first_code}, {'codes.second_code':second_code}]} 
+    if get_count('first_code', first_code) == 0:
+        return 0
+    else: 
+        return float(db.find(query).count())/float((get_count('first_code', first_code)))
 
-    query = {'$and':[{'codes.first_code':first_code}, {'codes.second_code':second_code}]}
+def get_nothing(first_code):
+    query = {'$and' : [{'codes.first_code': first_code}, {'codes.second_code' : []}]}
+    return float(db.find(query).count()) / float(get_count('first_code', first_code))
 
-    return db.find(query).count()
-
-
+# db.hadley.find({$and : [{'codes.first_code': 'Affirm'}, {'codes.second_code' : []}]}, {'codes.second_code':1}).count()
 
 total = db.count()
 
@@ -60,25 +61,34 @@ with open(event_in+'_'+rumor_in+'_statistics.csv', 'wb') as f:
     totals_row = ['Total Tweets:', total]
     f_writer.writerow(totals_row)
 
-    ##################################################
+    #new counts #dictionary compression with a list compression inside 
     f_writer.writerow([])
-    f_writer.writerow(['Cross-Tabulation'])
+    f_writer.writerow(['Cross-Tabulation by second level code'])
+    lines = [[second_code]+ [get_overlap_count(first_code, second_code) for first_code in first_level] for second_code in second_level]
 
-    lines = [[first_code]+[get_overlap_count(first_code, code) for code in second_level] for first_code in first_level]
-
-
-    '''
-    Equivalent to:
-
+    ''' 
+    equivalent to:
     results = {}
     for first in first_level:
             results[first] = []
         for second in second_level:
-            results[first].append(get_overlap_count(first, second))
-    '''
+            results[first = get_overlap_count(first, second)'''
 
-    header = [''] + second_level
+    header = ['In Percents'] + first_level
     f_writer.writerow(header)
-
+    
     for line in lines:
         f_writer.writerow(line)
+
+    f_writer.writerow(['None']+[get_nothing(code) for code in first_level])
+
+''' f_writer.writerow([])
+    f_writer.writerow(['Cross-Tabulation by first level code'])
+    lines = [[first_code]+ [get_overlap_count(first_code, code) for code in second_level] for first_code in first_level]
+
+
+    header = ['In Percents'] + second_level
+    f_writer.writerow(header)
+    
+    for line in lines:
+        f_writer.writerow(line)'''
