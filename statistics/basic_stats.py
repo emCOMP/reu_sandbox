@@ -27,10 +27,23 @@ def get_rumor_stats():
     def get_overlap_count(first_code, second_code):
         if type(first_code) == type(second_code) != str:
             raise TypeError('Invalid code_level or code_name type: ' +str(type(first_code))+' and '+str(type(second_code)))
-        query = {'$and':[{'codes.first_code':first_code}, {'codes.second_code':second_code}]} 
+        query = {'$and':[{'codes.first_code':first_code}, {'codes.second_code':second_code}]}
+        print db.find(query).count()
+        print get_count('second_code', second_code)
+        if get_count('second_code', second_code) == 0:
+            return 0
+        else:
+            return float(db.find(query).count())/float((get_count('second_code', second_code)))
+
+    def get_overlap_percent(first_code, second_code):
+        if type(first_code) == type(second_code) != str:
+            raise TypeError('Invalid code_level or code_name type: ' +str(type(first_code))+' and '+str(type(second_code)))
+        query = {'$and':[{'codes.first_code':first_code}, {'codes.second_code':second_code}]}
+        print db.find(query).count()
+        print get_count('second_code', second_code)
         if get_count('first_code', first_code) == 0:
             return 0
-        else: 
+        else:
             return float(db.find(query).count())/float((get_count('first_code', first_code)))
 
     def get_nothing(first_code):
@@ -66,7 +79,7 @@ def get_rumor_stats():
         #new counts #dictionary compression with a list compression inside 
         f_writer.writerow([])
         f_writer.writerow(['Cross-Tabulation by second level code'])
-        lines = [[second_code]+ [get_overlap_count(first_code, second_code) for first_code in first_level] for second_code in second_level]
+        lines = [[second_code]+ [get_overlap_precent(first_code, second_code) for first_code in first_level] for second_code in second_level]
 
         ''' 
         equivalent to:
@@ -84,16 +97,14 @@ def get_rumor_stats():
 
         f_writer.writerow(['None']+[get_nothing(code) for code in first_level])
 
-    ''' f_writer.writerow([])
+
+        f_writer.writerow([])
         f_writer.writerow(['Cross-Tabulation by first level code'])
         lines = [[first_code]+ [get_overlap_count(first_code, code) for code in second_level] for first_code in first_level]
 
 
         header = ['In Percents'] + second_level
         f_writer.writerow(header)
-        
-        for line in lines:
-            f_writer.writerow(line)'''
 
     print 'Stats file generated.  Please upload to the drive'
 
