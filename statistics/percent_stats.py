@@ -9,6 +9,8 @@ def get_percent_stats(event_in, rumor_in):
     #Ex.     Mongo.sydneysiege.hadley
     db = dbclient[event_in][rumor_in]
 
+    total = db.count()
+
     # A function to take
     def get_count(code_level, code_name):
 
@@ -19,6 +21,16 @@ def get_percent_stats(event_in, rumor_in):
         query = {field_name: code_name}
 
         return db.find(query).count()
+
+    def get_percent(code_level,code_name):
+
+        if type(code_level) == type(code_name) != str:
+            raise TypeError('Invalid code_level or code_name type: ' +str(type(code_level))+' and '+str(type(code_name)))
+
+        field_name = 'codes.' + code_level
+        query = {field_name: code_name}
+
+        return float(db.find(query).count())/float(total)
 
     def get_overlap_count(first_code, second_code):
         if type(first_code) == type(second_code) != str:
@@ -45,7 +57,6 @@ def get_percent_stats(event_in, rumor_in):
         else:
             return float(db.find(query).count()) / float(get_count('first_code', first_code))
 
-    total = db.count()
 
     first_level = ['Affirm', 'Deny', 'Neutral', 'Unrelated', 'Uncodable']
     second_level = ['Implicit', 'Uncertainty', 'Ambiguity']
@@ -63,8 +74,14 @@ def get_percent_stats(event_in, rumor_in):
         # Glue them together
         all_counts = level_one_counts + level_two_counts
 
+        level_one_percents = [get_percent('first_code', code) for code in first_level]
+        level_two_percents = [get_percent('second_code', code) for code in second_level]
+
+        all_percents = level_one_percents + level_two_percents
+
         # Write them to the file
         f_writer.writerow(all_counts)
+        f_writer.writerow(all_percents)
 
         totals_row = ['Total Tweets:', total]
         f_writer.writerow(totals_row)
